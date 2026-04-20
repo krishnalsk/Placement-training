@@ -1,0 +1,202 @@
+Account.java
+--------------------------------------------------------------------------------------------
+package mini_project;
+
+import java.util.ArrayList;
+
+public class Account {
+    private String accountNumber;
+    private int pin;
+    private double balance;
+    private ArrayList<Transaction> transactions;
+
+    public Account(String accountNumber, int pin, double balance) {
+        this.accountNumber = accountNumber;
+        this.pin = pin;
+        this.balance = balance;
+        this.transactions = new ArrayList<>();
+    }
+
+    public String getAccountNumber() {
+        return accountNumber;
+    }
+
+    public boolean validatePin(int inputPin) {
+        return this.pin == inputPin;
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    public void deposit(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Invalid deposit amount!");
+        }
+        balance += amount;
+        transactions.add(new Transaction("DEPOSIT", amount));
+    }
+
+    public void withdraw(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Invalid withdrawal amount!");
+        }
+        if (amount > balance) {
+            throw new IllegalArgumentException("Insufficient balance!");
+        }
+        balance -= amount;
+        transactions.add(new Transaction("WITHDRAW", amount));
+    }
+
+    public void showTransactions() {
+        if (transactions.isEmpty()) {
+            System.out.println("No transactions found.");
+            return;
+        }
+        for (Transaction t : transactions) {
+            System.out.println(t);
+        }
+    }
+}
+-----------------------------------------------------------
+Transaction.java
+------------------------------------------------------------
+package mini_project;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class Transaction {
+    private String type;
+    private double amount;
+    private LocalDateTime date;
+
+    public Transaction(String type, double amount) {
+        this.type = type;
+        this.amount = amount;
+        this.date = LocalDateTime.now();
+    }
+
+    @Override
+    public String toString() {
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+        return date.format(format) + " - " + type + ": ₹" + String.format("%.2f", amount);
+    }
+}
+----------------------------------------------------------------------------
+ATM.java (Main File)
+----------------------------------------------------------------------------
+package mini_project;
+
+import java.util.HashMap;
+import java.util.Scanner;
+
+public class ATM {
+    private HashMap<String, Account> accounts;
+    private Scanner scanner;
+
+    public ATM() {
+        accounts = new HashMap<>();
+        scanner = new Scanner(System.in);
+
+        // Sample accounts
+        accounts.put("1001", new Account("1001", 1234, 5000));
+        accounts.put("1002", new Account("1002", 4321, 3000));
+    }
+
+    public void start() {
+        System.out.println("===== ATM SYSTEM =====");
+
+        System.out.print("Enter Account Number: ");
+        String accNo = scanner.nextLine();
+
+        System.out.print("Enter PIN: ");
+        int pin = getIntInput();
+
+        Account acc = accounts.get(accNo);
+
+        if (acc == null || !acc.validatePin(pin)) {
+            System.out.println("Invalid credentials!");
+            return;
+        }
+
+        System.out.println("Login successful!");
+
+        int choice;
+
+        do {
+            System.out.println("\n1. Check Balance");
+            System.out.println("2. Deposit");
+            System.out.println("3. Withdraw");
+            System.out.println("4. Transaction History");
+            System.out.println("5. Exit");
+
+            System.out.print("Enter choice: ");
+            choice = getIntInput();
+
+            try {
+                switch (choice) {
+                    case 1:
+                        System.out.println("Balance: ₹" + acc.getBalance());
+                        break;
+
+                    case 2:
+                        System.out.print("Enter amount: ");
+                        double dep = getDoubleInput();
+                        acc.deposit(dep);
+                        System.out.println("Deposit successful!");
+                        break;
+
+                    case 3:
+                        System.out.print("Enter amount: ");
+                        double wd = getDoubleInput();
+                        acc.withdraw(wd);
+                        System.out.println("Withdrawal successful!");
+                        break;
+
+                    case 4:
+                        acc.showTransactions();
+                        break;
+
+                    case 5:
+                        System.out.println("Thank you!");
+                        break;
+
+                    default:
+                        System.out.println("Invalid choice!");
+                }
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+
+        } while (choice != 5);
+    }
+
+    // ✅ Safe integer input
+    private int getIntInput() {
+        while (!scanner.hasNextInt()) {
+            System.out.print("Invalid input! Enter number: ");
+            scanner.next();
+        }
+        int value = scanner.nextInt();
+        scanner.nextLine(); // consume newline
+        return value;
+    }
+
+    // ✅ Safe double input
+    private double getDoubleInput() {
+        while (!scanner.hasNextDouble()) {
+            System.out.print("Invalid input! Enter amount: ");
+            scanner.next();
+        }
+        double value = scanner.nextDouble();
+        scanner.nextLine(); // consume newline
+        return value;
+    }
+
+    public static void main(String[] args) {
+        ATM atm = new ATM();
+        atm.start();
+    }
+}
+---------------------------------------------------------------------------------------------------------
